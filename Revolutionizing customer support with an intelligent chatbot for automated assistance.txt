@@ -1,0 +1,50 @@
+import openai
+import pandas as pd
+import os
+from datetime import datetime
+
+# Set your OpenAI API key
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Initialize an empty DataFrame for chat logs
+chat_logs = pd.DataFrame(columns=["timestamp", "user_message", "bot_response"])
+
+def get_bot_response(user_message):
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful customer support chatbot."},
+                {"role": "user", "content": user_message}
+            ]
+        )
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def chat_session():
+    global chat_logs
+
+    print("Welcome to AI Customer Support. Type 'exit' to end.\n")
+
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == "exit":
+            break
+        
+        bot_reply = get_bot_response(user_input)
+        print("Bot:", bot_reply)
+
+        # Save interaction to DataFrame
+        chat_logs = chat_logs.append({
+            "timestamp": datetime.now(),
+            "user_message": user_input,
+            "bot_response": bot_reply
+        }, ignore_index=True)
+
+    # Save chat logs to CSV
+    chat_logs.to_csv("chat_logs.csv", index=False)
+    print("Chat saved to chat_logs.csv")
+
+if __name__ == "__main__":
+    chat_session()
